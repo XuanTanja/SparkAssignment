@@ -1,5 +1,7 @@
 package de.hpi.spark_assignment
 
+import java.nio.file.Files
+
 import org.apache.spark.sql.{Dataset, Encoder, SparkSession}
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.classification.DecisionTreeClassificationModel
@@ -8,12 +10,28 @@ import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorIndexer}
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
+import java.io.File
+
+import org.apache.spark.sql
+
+import scala.collection.mutable.ArrayBuffer
 
 
 //SINGLETON
 object SimpleSpark extends App {
 
   override def main(args: Array[String]): Unit = {
+
+    val usage = "Usage: [--path TPCH] [--Cores Number]"
+
+    if (args.length == 0) {
+      println(usage.toString)
+      //return 0
+    }
+
+    val path = "data" //TODO: this must be passed as argument
+
+    val numCores = "4"
 
     // Turn off logging
     Logger.getLogger("org").setLevel(Level.OFF)
@@ -26,11 +44,10 @@ object SimpleSpark extends App {
     val sparkBuilder = SparkSession
       .builder()
       .appName("SparkAssignment")
-      .master("local[4]") // local, with 4 worker cores
+      .master("local[" + numCores + "]") // local, with numCores worker cores
     val spark = sparkBuilder.getOrCreate()
-
     // Set the default number of shuffle partitions (default is 200, which is too high for local deployment)
-    spark.conf.set("spark.sql.shuffle.partitions", "8") //
+    spark.conf.set("spark.sql.shuffle.partitions", "8") //Does this have to do with num of cores??
 
     //32 cores for homework
 
@@ -42,67 +59,32 @@ object SimpleSpark extends App {
     //https://spark.apache.org/docs/latest/cluster-overview.html
 
     // java-jar YourAlgorithmName.jar --path TPCH --cores 4
-    //TODO: should be dynamic
 
-    val tpch_customer = spark
-      .read
-      .option("inferSchema", "true")
-      .option("header", "true")
-      .format("csv")
-      .option("delimiter", ";")
-      .load("data/tpch_customer.csv")
-    val tpch_lineitem = spark
-      .read
-      .option("inferSchema", "true")
-      .option("header", "true")
-      .format("csv")
-      .option("delimiter", ";")
-      .load("data/tpch_lineitem.csv")
-    val tpch_nation = spark
-      .read
-      .option("inferSchema", "true")
-      .option("header", "true")
-      .format("csv")
-      .option("delimiter", ";")
-      .load("data/tpch_nation.csv")
-    val tpch_orders = spark
-      .read
-      .option("inferSchema", "true")
-      .option("header", "true")
-      .format("csv")
-      .option("delimiter", ";")
-      .load("data/tpch_orders.csv")
-    val tpch_part = spark
-      .read
-      .option("inferSchema", "true")
-      .option("header", "true")
-      .format("csv")
-      .option("delimiter", ";")
-      .load("data/tpch_part.csv")
-    val tpch_region = spark
-      .read
-      .option("inferSchema", "true")
-      .option("header", "true")
-      .format("csv")
-      .option("delimiter", ";")
-      .load("data/tpch_region.csv")
-    val tpch_supplier = spark
-      .read
-      .option("inferSchema", "true")
-      .option("header", "true")
-      .format("csv")
-      .option("delimiter", ";")
-      .load("data/tpch_supplier.csv")
+    val dataArrayPaths: Array[File] = (new File(path + "/"))
+      .listFiles
+      .filter(_.toString.endsWith(".csv"))
 
-    tpch_customer.printSchema()
-    tpch_customer.show(10)
-    tpch_lineitem.show(10)
-    tpch_nation.show(10)
-    tpch_orders.show(10)
-    tpch_part.show(10)
-    tpch_region.show(10)
-    tpch_supplier.show(10)
-    tpch_supplier.printSchema()
+    //for (name <- dataArrayPaths) {println(name.toString)}
+
+    var dataFrameArray = ArrayBuffer[sql.DataFrame]() //list of dataframes
+
+    for (dataPath <- dataArrayPaths){
+      var aux = spark
+      .read
+      .option("inferSchema", "true") //to maintain variable types (int, string, etc)
+      .option("header", "true")
+      .format("csv")
+      .option("delimiter", ";")
+      .load(dataPath.toString)
+
+      dataFrameArray += aux //add each dataframe to list of dataframes
+    }
+
+    for (dataFrame<-dataFrameArray) {
+      dataFrame.printSchema()
+      dataFrame.show(2)
+    }
+
 
   }
 }
