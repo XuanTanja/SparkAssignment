@@ -65,7 +65,7 @@ object SimpleSpark extends App {
       .filter(_.toString.endsWith(".csv"))
 
     //for (name <- dataArrayPaths) {println(name.toString)}
-
+    //scala map function --> replace loop with map funtion, each path to a dataframe
     var dataFrameArray = ArrayBuffer[sql.DataFrame]() //list of dataframes
 
     for (dataPath <- dataArrayPaths){
@@ -84,6 +84,8 @@ object SimpleSpark extends App {
       dataFrame.printSchema()
       dataFrame.show(2)
     }
+
+    //-> Call functions; DataFrame = Spark with SQL; how to transfrom data ->
 
 
   }
