@@ -42,13 +42,13 @@ data/TPCH
 
 #SHITTY output not in target directory
 build.log
-!/data/TPCH/tpch_lineitem.csv
-!/data/TPCH/tpch_part.csv
-!/data/TPCH/tpch_orders.csv
-!/data/TPCH/tpch_nation.csv
-!/data/TPCH/tpch_region.csv
-!/data/TPCH/tpch_supplier.csv
-!/data/TPCH/tpch_customer.csv
+!/data/tpch_lineitem.csv
+!/data/tpch_part.csv
+!/data/tpch_orders.csv
+!/data/tpch_nation.csv
+!/data/tpch_region.csv
+!/data/tpch_supplier.csv
+!/data/tpch_customer.csv
 
 
 *.csv
