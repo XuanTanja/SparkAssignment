@@ -1,92 +1,64 @@
 package de.hpi.spark_assignment
-
-import java.nio.file.Files
-
-import org.apache.spark.sql.{Dataset, Encoder, SparkSession}
-import org.apache.spark.ml.Pipeline
-import org.apache.spark.ml.classification.DecisionTreeClassificationModel
-import org.apache.spark.ml.classification.DecisionTreeClassifier
-import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
-import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorIndexer}
+import org.apache.spark.sql.{Dataset, Encoder, Row, SparkSession}
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
 import java.io.File
 
-import org.apache.spark.sql
 
-import scala.collection.mutable.ArrayBuffer
-
-
-//SINGLETON
 object SimpleSpark extends App {
 
   override def main(args: Array[String]): Unit = {
+    //Argument Parsing: https://stackoverflow.com/questions/2315912/best-way-to-parse-command-line-parameters
+    //Spark cluster documentation: https://spark.apache.org/docs/latest/cluster-overview.html
 
-    val usage = "Usage: [--path TPCH] [--Cores Number]"
+    // java-jar SimpleSpark.jar --path data --cores 4
 
-    if (args.length == 0) {
-      println(usage.toString)
-      //return 0
+
+    val usage = "Usage: --path [folderDataPath] --cores [numCores]"
+    if (args.length == 0 || args.length <4 || args.length > 4) {
+      println(usage)
     }
+    else if (args.length == 4){
+      if (args(0).equals("--path") && args(2).equals("--cores")){
+        //Run program
+        try {
+          var path = args(1)
+          var numCores = args(3).toInt
+          // Turn off logging in console
+          Logger.getLogger("org").setLevel(Level.OFF)
+          Logger.getLogger("akka").setLevel(Level.OFF)
 
-    val path = "data" //TODO: this must be passed as argument
+          println("------------------------------------ Initialize -------------------------------------------");
 
-    val numCores = "4"
+          // Create a SparkSession to work with Spark (This is where tasks are distributed to Executors or workers)
+          val sparkBuilder = SparkSession
+            .builder()
+            .appName("SparkAssignment")
+            .master("local[" + numCores + "]") // local, with numCores worker cores
+          val spark = sparkBuilder.getOrCreate()
 
-    // Turn off logging
-    Logger.getLogger("org").setLevel(Level.OFF)
-    Logger.getLogger("akka").setLevel(Level.OFF)
+          // Set the default number of shuffle partitions (the default is 200)
+          //Shuffle partitions are the number of partitions that each data frame is divided and handled by an available core
+          spark.conf.set("spark.sql.shuffle.partitions", "8") //Does this have to do with num of cores??
 
-    println("-------------------------------------- Init ---------------------------------------------");
+          //Get all csv files from folder
+          val dataArrayPaths: Array[File] = (new File(path + "/"))
+            .listFiles
+            .filter(_.toString.endsWith(".csv"))
 
+          val listStringPaths = dataArrayPaths //convert them to a list
+            .map(_.toString).toList
 
-    // Create a SparkSession to work with Spark
-    val sparkBuilder = SparkSession
-      .builder()
-      .appName("SparkAssignment")
-      .master("local[" + numCores + "]") // local, with numCores worker cores
-    val spark = sparkBuilder.getOrCreate()
-    // Set the default number of shuffle partitions (default is 200, which is too high for local deployment)
-    spark.conf.set("spark.sql.shuffle.partitions", "8") //Does this have to do with num of cores??
+          //Call Sindy to work on csv's, passing in spark session
+          Sindy.discoverINDs(listStringPaths, spark)
 
-    //32 cores for homework
-
-    // Importing implicit encoders for standard library classes and tuples that are used as Dataset types
-    //Serialization and Deserialization
-    import spark.implicits._
-
-    //Argument Parsing: https://spark.apache.org/docs/latest/spark-standalone.html
-    //https://spark.apache.org/docs/latest/cluster-overview.html
-
-    // java-jar YourAlgorithmName.jar --path TPCH --cores 4
-
-    val dataArrayPaths: Array[File] = (new File(path + "/"))
-      .listFiles
-      .filter(_.toString.endsWith(".csv"))
-
-    //for (name <- dataArrayPaths) {println(name.toString)}
-    //scala map function --> replace loop with map funtion, each path to a dataframe
-    var dataFrameArray = ArrayBuffer[sql.DataFrame]() //list of dataframes
-
-    for (dataPath <- dataArrayPaths){
-      var aux = spark
-      .read
-      .option("inferSchema", "true") //to maintain variable types (int, string, etc)
-      .option("header", "true")
-      .format("csv")
-      .option("delimiter", ";")
-      .load(dataPath.toString)
-
-      dataFrameArray += aux //add each dataframe to list of dataframes
+        }catch {
+          case error: NumberFormatException => println("--cores argument is not an integer")
+        }
+      }
+      else {
+        print(usage)
+      }
     }
-
-    for (dataFrame<-dataFrameArray) {
-      dataFrame.printSchema()
-      dataFrame.show(2)
-    }
-
-    //-> Call functions; DataFrame = Spark with SQL; how to transfrom data ->
-
-
   }
 }
