@@ -19,7 +19,7 @@ object SimpleSpark extends App {
 
     if (args.length == 0 ||args.length == 4){
       //Default values if args.length == 0
-      var path = "/TPCH" //Default folder path of csv files
+      var path = "./TPCH" //Default folder path of csv files
       var numCores = 4
 
       if (args.length > 0){
