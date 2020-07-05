@@ -11,24 +11,32 @@ This is a basic scala project that includes spark dependencies and necessary bui
 
 **Steps for discovering Inclusion Dependencies** (see "Scaling Out the Discovery of Inclusion Dependencies" by Sebastian Kruse, Thorsten Papenbrock, Felix Naumann)
 https://www.researchgate.net/publication/296160215_Scaling_Out_the_Discovery_of_Inclusion_Dependencies
+
 Input Tuples --> Cells
-	- Splitting each record with (value, (Singleton type))
+ - Splitting each record with (value, (Singleton type))
+ 
 Cells --> Cache-based Preaggregation (optional when repeatedly occuring cells with values)
-	- Should reduce network load
-	- Groups by the value, and the singleton type
+- Should reduce network load
+- Groups by the value, and the singleton type
+
  Cache-based Preaggregation --> Global partitioning
-	- Reordering the cells among the workers of the cluster through hashing
-	- We need an appropriate function to map each different value to unique cell
-	- Therefore: cells with the same value are on the same worker
+- Reordering the cells among the workers of the cluster through hashing
+- We need an appropriate function to map each different value to unique cell
+- Therefore: cells with the same value are on the same worker
+
 Global partitioning --> Attribute Sets
-	- Grouping all cells by their values
-	- Aggregating attribute sets using union operator
+- Grouping all cells by their values
+- Aggregating attribute sets using union operator
+
 Attribute Sets -->  Inclusion Lists
-	- Set with n attributes = n inclusion lists (all possible combinations)
+- Set with n attributes = n inclusion lists (all possible combinations)
+
 Inclusion List --> Partition
-	- Group by the first attribute
+- Group by the first attribute
+
 Partition --> Aggregate
-	- Intersection with preaggregation
-	- Ends with attributes with empty sets; no (n,0)
+- Intersection with preaggregation
+- Ends with attributes with empty sets; no (n,0)
+
 Aggregate --> INDs
-  - Disassembling into INDs
+- Disassembling into INDs
